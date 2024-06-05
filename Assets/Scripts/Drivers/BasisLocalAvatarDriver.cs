@@ -45,8 +45,8 @@ public class BasisLocalAvatarDriver : BasisAvatarDriver
         BasisLocalEyeFollowDriver EyeFollowBase = BasisHelpers.GetOrAddComponent<BasisLocalEyeFollowDriver>(Player.Avatar.gameObject);
         EyeFollowBase.CreateEyeLook(this);
         HeadScaledDown = Vector3.zero;
-        SetMatrixRecalculation(true);
-        updateWhenOffscreen(true);
+        //SetMatrixRecalculation(true);
+        //updateWhenOffscreen(true);
         
         //InitializeShadowClones();
         LocalCloneHelper.SetupAvatar(Player.Avatar.gameObject);
