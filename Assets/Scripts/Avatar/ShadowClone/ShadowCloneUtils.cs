@@ -62,7 +62,7 @@ namespace Avatar.ShadowClone
         
         #region Generic Optimizations
 
-        private static void ConfigureRenderer(Renderer renderer, bool isShadowClone = false)
+        public static void ConfigureRenderer(Renderer renderer, bool isShadowClone = false)
         {
 	        renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
 	        renderer.allowOcclusionWhenDynamic = false; // fixes culling at weird angles in third person

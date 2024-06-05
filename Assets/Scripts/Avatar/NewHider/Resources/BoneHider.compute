@@ -1,0 +1,21 @@
+#pragma kernel Hider
+
+// A "Raw" buffer is used to access the mesh vertex buffer.
+//
+// Note that while using StructuredBuffer might be more convenient, a
+// vertex buffer that is also a structured buffer is not supported on
+// some graphics APIs (most notably DX11).
+RWByteAddressBuffer VertexBuffer;
+int bufferLayout;
+
+StructuredBuffer<int> weightedVertices;
+uint weightedCount;
+float3 pos;
+
+[numthreads(64, 1, 1)]
+void Hider(uint3 id : SV_DispatchThreadID) {
+    if (id.x >= weightedCount) return;
+    int index = weightedVertices[id.x];
+    int vidx = index * bufferLayout;
+    VertexBuffer.Store3(vidx<<2, asuint(pos));
+}

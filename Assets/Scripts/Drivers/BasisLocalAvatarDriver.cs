@@ -47,7 +47,10 @@ public class BasisLocalAvatarDriver : BasisAvatarDriver
         HeadScaledDown = Vector3.zero;
         SetMatrixRecalculation(true);
         updateWhenOffscreen(true);
-        InitializeShadowClones();
+        
+        //InitializeShadowClones();
+        LocalCloneHelper.SetupAvatar(Player.Avatar.gameObject);
+        
         HeadScale = References.head.localScale;
         SetBodySettings(LocalDriver);
         CalculateTransformPositions(Player.Avatar.Animator, LocalDriver);

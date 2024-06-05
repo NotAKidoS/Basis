@@ -1,0 +1,59 @@
+#pragma kernel CopyAndHide
+
+// copying from source to target
+RWByteAddressBuffer _sourceBuffer;
+RWByteAddressBuffer _targetBuffer;
+uint _sourceBufferLayout;
+float4x4 _rootBoneMatrix;
+
+// head hiding
+StructuredBuffer<int> _hiddenVertices;
+uint _hiddenVerticesMask;
+float3 _hiddenVertexPos; // head bone or nan
+
+[numthreads(64, 1, 1)]
+void CopyAndHide(uint3 id : SV_DispatchThreadID) 
+{
+    float3 pos;
+    uint byteAddressIndex = id.x * _sourceBufferLayout;
+    
+    [branch] // get vertex in _hiddenVertices and check if it's hidden by mask
+    if (_hiddenVerticesMask & (1 << _hiddenVertices[id.x]))
+    {
+        pos = _hiddenVertexPos; // head-hidden
+    }
+    else
+    {
+        pos = asfloat(_sourceBuffer.Load3(byteAddressIndex)); // copy
+        pos = mul(_rootBoneMatrix, float4(pos, 1)).xyz; // transform
+
+        if (_sourceBufferLayout >= 24) // normal
+        {
+            const int normal_offset = 12;
+            float3 norm = asfloat(_sourceBuffer.Load3(byteAddressIndex + normal_offset));
+            norm = mul(_rootBoneMatrix, float4(norm, 0)).xyz;
+            _targetBuffer.Store3(byteAddressIndex + normal_offset, asuint(norm));
+        }
+
+        if (_sourceBufferLayout == 40) // normal & tangent
+        {
+            const int tangent_offset = 16;
+            float4 tan = asfloat(_sourceBuffer.Load4(byteAddressIndex + tangent_offset));
+            tan.xyz = mul(_rootBoneMatrix, float4(tan.xyz, 0)).xyz;
+            _targetBuffer.Store4(byteAddressIndex + tangent_offset, asuint(tan));
+        }
+    }
+
+    _targetBuffer.Store3(byteAddressIndex, asuint(pos)); // apply to clone
+}
+
+// [branch]
+// if (_hiddenVertices[id.x] != -1)
+// {
+//     pos = _hiddenVertexPos; // head-hidden
+// }
+// else
+// {
+//     pos = asfloat(_sourceBuffer.Load3(byteAddressIndex)); // copy
+//     pos = mul(_rootBoneMatrix, float4(pos, 1)).xyz; // transform
+// }
