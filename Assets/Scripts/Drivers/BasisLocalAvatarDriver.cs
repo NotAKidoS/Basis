@@ -1,3 +1,4 @@
+using Avatar.ShadowClone;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 public class BasisLocalAvatarDriver : BasisAvatarDriver
@@ -46,6 +47,7 @@ public class BasisLocalAvatarDriver : BasisAvatarDriver
         HeadScaledDown = Vector3.zero;
         SetMatrixRecalculation(true);
         updateWhenOffscreen(true);
+        InitializeShadowClones();
         HeadScale = References.head.localScale;
         SetBodySettings(LocalDriver);
         CalculateTransformPositions(Player.Avatar.Animator, LocalDriver);

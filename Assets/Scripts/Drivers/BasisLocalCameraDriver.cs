@@ -30,10 +30,12 @@ public class BasisLocalCameraDriver : MonoBehaviour
         }
         CamerasLockToPosition.Initialize(LocalPlayer);
         RenderPipelineManager.beginCameraRendering += beginCameraRendering;
+        RenderPipelineManager.endCameraRendering += endCameraRendering;
     }
     public void OnDisable()
     {
         RenderPipelineManager.beginCameraRendering -= beginCameraRendering;
+        RenderPipelineManager.endCameraRendering -= endCameraRendering;
         if (LocalPlayer.LocalAvatarDriver && LocalPlayer.LocalAvatarDriver.References != null && LocalPlayer.LocalAvatarDriver.References.head != null)
         {
             LocalPlayer.LocalAvatarDriver.References.head.localScale = LocalPlayer.LocalAvatarDriver.HeadScale;
@@ -47,7 +49,17 @@ public class BasisLocalCameraDriver : MonoBehaviour
             {
                 LocalPlayer.LocalAvatarDriver.References.head.localScale = LocalPlayer.LocalAvatarDriver.HeadScaledDown;
             }
-            else
+            // else // Unscale in OnPostRender, otherwise shadow clones will have scaled head following frame
+            // {
+            //     LocalPlayer.LocalAvatarDriver.References.head.localScale = LocalPlayer.LocalAvatarDriver.HeadScale;
+            // }
+        }
+    }
+    public void endCameraRendering(ScriptableRenderContext context, Camera Camera)
+    {
+        if (LocalPlayer.HasAvatarDriver)
+        {
+            if (Camera.GetInstanceID() == CameraInstanceID)
             {
                 LocalPlayer.LocalAvatarDriver.References.head.localScale = LocalPlayer.LocalAvatarDriver.HeadScale;
             }

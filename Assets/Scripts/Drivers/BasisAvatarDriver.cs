@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Avatar.ShadowClone;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Animations.Rigging;
@@ -16,6 +18,7 @@ public abstract class BasisAvatarDriver : MonoBehaviour
     public BasisTransformMapping References;
     public RuntimeAnimatorController runtimeAnimatorController;
     public SkinnedMeshRenderer[] SkinnedMeshRenderer;
+    public SkinnedMeshRenderer[] ShadowCloneRenderer;
     public BasisPlayer Player;
     public List<RigTransform> AdditionalTransforms = new List<RigTransform>();
     public List<Rig> Rigs = new List<Rig>();
@@ -363,4 +366,74 @@ public abstract class BasisAvatarDriver : MonoBehaviour
             }
         }
     }
+
+    #region Unity Events
+
+    private void Update()
+    {
+        UpdateShadowClones();
+    }
+
+    #endregion
+
+    #region Shadow Clones
+    
+    private MaterialPropertyBlock _shadowMaterialBlock;
+    private List<Material> _mainMaterialsComp;
+    private List<Material> _shadowMaterialsComp;
+    //private Material[] _mainMaterials;
+
+    protected void InitializeShadowClones()
+    {
+        _shadowMaterialBlock = new MaterialPropertyBlock();
+        
+        _mainMaterialsComp = new List<Material>();
+        _shadowMaterialsComp = new List<Material>();
+        //_mainMaterials = Array.Empty<Material>();
+        
+        ShadowCloneUtils.CreateShadowClones(SkinnedMeshRenderer, out ShadowCloneRenderer);
+    }
+    
+    private void UpdateShadowClones()
+    {
+        for (int i = 0; i < SkinnedMeshRenderer.Length; i++)
+        {
+            SkinnedMeshRenderer sourceRenderer = SkinnedMeshRenderer[i];
+            SkinnedMeshRenderer shadowRenderer = ShadowCloneRenderer[i];
+            if (sourceRenderer == null || shadowRenderer == null)
+                continue; // anything a user can touch is suspect for death (trail renderers can destroy objects)
+
+            bool shouldShadowBeActive = sourceRenderer.enabled // nerds animate renderer instead of game object off
+                                        && sourceRenderer.isVisible // TODO: check again if this caused weird culling issues
+                                        && sourceRenderer.gameObject.activeInHierarchy;
+            
+            shadowRenderer.gameObject.SetActive(shouldShadowBeActive);
+            if (!shouldShadowBeActive) 
+                continue; // no need to update if the shadow is not active
+            
+            CopyBlendshapeValues(sourceRenderer, shadowRenderer);
+            CopyMaterialsAndProperties(sourceRenderer, shadowRenderer);
+        }
+    }
+    
+    private void CopyBlendshapeValues(SkinnedMeshRenderer sourceRenderer, SkinnedMeshRenderer shadowRenderer)
+    {
+        for (int i = 0; i < sourceRenderer.sharedMesh.blendShapeCount; i++)
+            shadowRenderer.SetBlendShapeWeight(i, sourceRenderer.GetBlendShapeWeight(i));
+    }
+    
+    private void CopyMaterialsAndProperties(Renderer sourceRenderer, Renderer shadowRenderer)
+    {
+        sourceRenderer.GetSharedMaterials(_mainMaterialsComp);
+        shadowRenderer.GetSharedMaterials(_shadowMaterialsComp);
+        if (!_mainMaterialsComp.SequenceEqual(_shadowMaterialsComp))
+        {
+            //_mainMaterialsComp.CopyTo(_mainMaterials); // no alloc (_mainMaterials was own array for each clone)
+            shadowRenderer.sharedMaterials = _mainMaterialsComp.ToArray(); // alloc
+        }
+        sourceRenderer.GetPropertyBlock(_shadowMaterialBlock);
+        shadowRenderer.SetPropertyBlock(_shadowMaterialBlock);
+    }
+
+    #endregion
 }
