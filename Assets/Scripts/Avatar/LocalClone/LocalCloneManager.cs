@@ -107,7 +107,7 @@ public class LocalCloneManager : MonoBehaviour
         //else if (forceUiCulling)
             //_resetAfterThisRender = true; // reset after ui cam render
         
-        Debug.Log("PreProcess");
+        //Debug.Log("PreProcess");
             
         for (int i = s_LocalClones.Count - 1; i >= 0; i--)
         {
